@@ -38,3 +38,14 @@ class GADDAG:
             
             # Mark the final node as a valid word boundary
             current.is_word = True
+
+    def is_valid_word(self, word):
+        if not word:
+            return False
+        current = self.root
+        path = word[0] + self.delimiter + word[1:]
+        for char in path:
+            if char not in current.children:
+                return False
+            current = current.children[char]
+        return current.is_word

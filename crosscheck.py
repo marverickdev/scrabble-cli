@@ -1,9 +1,28 @@
 import gaddag as gddg
+from gaddag import GADDAG, GADDAGNode
 
 def generate_moves(anchor_sq, current_gaddag_node, rack, board, cross_checks):
+    current_sq = anchor_sq
     row, col = current_sq
     
-    # ... (GADDAG traversal logic to handle existing board tiles) ...
+    if not (0 <= row < len(board) and 0 <= col < len(board[0])):
+        return
+    
+    # If the current square already has a tile on the board:
+    if board[row][col] is not None:
+        tile = board[row][col]
+        # Follow the existing letter in the GADDAG without using rack tiles
+        if tile in current_gaddag_node.children:
+            next_sq = (row, col + 1)
+            if col + 1 < len(board[row]):
+                generate_moves(
+                    next_sq,
+                    current_gaddag_node.children[tile],
+                    rack,  # Existing tile does not consume a tile from the rack
+                    board,
+                    cross_checks
+                )
+        return  # Stop here; do not place rack tiles on an occupied square
     
     # If the current square on the board is empty:
     if board[row][col] is None:
@@ -23,13 +42,32 @@ def generate_moves(anchor_sq, current_gaddag_node, rack, board, cross_checks):
                 new_rack.remove(tile)
                 
                 # Recurse deeper into the GADDAG and onto the next board square
-                generate_moves(
-                    next_sq, 
-                    current_gaddag_node.children[tile], 
-                    new_rack, 
-                    board, 
-                    cross_checks
-                )
+                next_sq = (row, col + 1)
+                if col + 1 < len(board[row]):
+                    generate_moves(
+                        next_sq, 
+                        current_gaddag_node.children[tile], 
+                        new_rack, 
+                        board, 
+                        cross_checks
+                    )
+
+def get_vertical_word_part(board, row, col, direction="UP"):
+    letters = []
+    dir_upper = direction.upper() if isinstance(direction, str) else ""
+    if dir_upper == "UP":
+        r = row - 1
+        while r >= 0 and board[r][col] is not None:
+            letters.append(str(board[r][col]))
+            r -= 1
+        return "".join(reversed(letters))
+    elif dir_upper == "DOWN":
+        r = row + 1
+        while r < len(board) and board[r][col] is not None:
+            letters.append(str(board[r][col]))
+            r += 1
+        return "".join(letters)
+    return ""
 
 def calculate_cross_checks(board, dictionary):
     # Initialize all empty squares with the full alphabet
