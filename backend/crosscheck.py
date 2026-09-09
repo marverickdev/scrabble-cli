@@ -1,9 +1,5 @@
-try:
-    from backend.gaddag import GADDAG, GADDAGNode
-    import backend.gaddag as gddg
-except ImportError:
-    from gaddag import GADDAG, GADDAGNode
-    import gaddag as gddg
+import backend.gaddag as gddg
+from backend.gaddag import GADDAG, GADDAGNode
 
 def generate_moves(anchor_sq, current_gaddag_node, rack, board, cross_checks):
     current_sq = anchor_sq

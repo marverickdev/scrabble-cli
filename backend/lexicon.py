@@ -4,14 +4,12 @@ lexicon.py - Dictionary loader and GADDAG initialization.
 
 import os
 from typing import Optional, Set
-try:
-    from backend.gaddag import GADDAG
-except ImportError:
-    from gaddag import GADDAG
+from backend.gaddag import GADDAG
 
-# Default path to dictionary relative to project root
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_DICT_PATH = os.path.join(PROJECT_ROOT, "data", "dictionary.txt")
+# Default path to dictionary relative to this file
+DEFAULT_DICT_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "data", "dictionary.txt"
+)
 
 # In-memory cache for singleton access
 _CACHED_GADDAG: Optional[GADDAG] = None

@@ -4,11 +4,7 @@ move validation, and complete Scrabble scoring engine.
 """
 
 from typing import List, Tuple, Optional, Dict, Any
-
-try:
-    from backend.bag import TILE_SCORES
-except ImportError:
-    from bag import TILE_SCORES
+from backend.bag import TILE_SCORES
 
 # Premium Square Constants
 NORMAL = ".."
