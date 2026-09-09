@@ -4,11 +4,11 @@ tests/test_movegen.py - Unit tests for lexicon.py and movegen.py.
 
 import unittest
 import time
-from board import Board
-from bag import Rack, TILE_DISTRIBUTION
-from lexicon import load_dictionary, get_default_gaddag, get_dictionary_words
-from movegen import generate_all_moves, ScrabbleMove
-from montecarlo import get_best_move_monte_carlo, SimState
+from backend.board import Board
+from backend.bag import Rack, TILE_DISTRIBUTION
+from backend.lexicon import load_dictionary, get_default_gaddag, get_dictionary_words
+from backend.movegen import generate_all_moves, ScrabbleMove
+from backend.montecarlo import get_best_move_monte_carlo, SimState
 
 
 class TestLexicon(unittest.TestCase):

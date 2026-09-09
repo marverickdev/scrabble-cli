@@ -3,13 +3,13 @@ Unit tests for bag.py and board.py.
 """
 
 import unittest
-from bag import TileBag, Rack, TILE_SCORES, TILE_DISTRIBUTION
-from board import (
+from backend.bag import TileBag, Rack, TILE_SCORES, TILE_DISTRIBUTION
+from backend.board import (
     Board, PlacedTile, parse_coords, format_coords,
     PREMIUM_MAP, TW, DW, TL, DL, STAR, NORMAL
 )
-import crosscheck
-from gaddag import GADDAG
+import backend.crosscheck as crosscheck
+from backend.gaddag import GADDAG
 
 
 class TestTileBag(unittest.TestCase):
