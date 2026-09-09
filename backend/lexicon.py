@@ -13,7 +13,7 @@ DEFAULT_DICT_PATH = os.path.join(
 
 # In-memory cache for singleton access
 _CACHED_GADDAG: Optional[GADDAG] = None
-_CACHED_WORDS: Optional[Set[str]] = None
+_CACHED_WORDS: Optional[Set[str]] =     None
 
 
 def load_dictionary(
