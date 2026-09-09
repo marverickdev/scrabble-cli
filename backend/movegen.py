@@ -4,16 +4,10 @@ Generates all legal Across and Down moves, evaluating cross-checks and blanks.
 """
 
 from typing import List, Tuple, Set, Optional, Dict, Any
-try:
-    from backend.gaddag import GADDAG, GADDAGNode
-    from backend.board import Board
-    import backend.crosscheck as crosscheck
-    import backend.fitness as fitness
-except ImportError:
-    from gaddag import GADDAG, GADDAGNode
-    from board import Board
-    import crosscheck
-    import fitness
+from backend.gaddag import GADDAG, GADDAGNode
+from backend.board import Board
+import backend.crosscheck as crosscheck
+import backend.fitness as fitness
 
 
 class ScrabbleMove:
