@@ -141,9 +141,34 @@ class TestFrontendInputAndRenderer(unittest.TestCase):
         screen = renderer.render_screen(game)
         self.assertIn("YOUR RACK", screen)
         self.assertIn("COMPUTER", screen)
+        self.assertIn("LEXICON: NASPA", screen)
 
         help_txt = renderer.render_help()
         self.assertIn("COMMANDS GUIDE", help_txt)
+
+        menu_txt = renderer.render_lexicon_menu()
+        self.assertIn("NASPA", menu_txt)
+        self.assertIn("CSW24", menu_txt)
+
+    def test_lexicon_selection_naspa_vs_csw(self):
+        from backend.lexicon import get_default_gaddag
+
+        # 1. NASPA Game: 'ZO' must be invalid
+        naspa_game = ScrabbleGame(lexicon_name="NASPA", seed=42)
+        naspa_game.start_game()
+        naspa_game.human_player.rack.tiles = ['Z', 'O', 'A', 'B', 'C', 'D', 'E']
+        success, msg = naspa_game.play_human_move("ZO", "H8", "H")
+        self.assertFalse(success)
+        self.assertIn("not in the dictionary", msg)
+
+        # 2. CSW24 Game: 'ZO' and 'CH' must be valid!
+        csw_game = ScrabbleGame(lexicon_name="CSW24", seed=42)
+        csw_game.start_game()
+        csw_game.human_player.rack.tiles = ['Z', 'O', 'A', 'B', 'C', 'D', 'E']
+        success, msg = csw_game.play_human_move("ZO", "H8", "H")
+        self.assertTrue(success)
+        self.assertIn("You played ZO", msg)
+        self.assertIn("CSW24", csw_game.lexicon_name)
 
 
 if __name__ == "__main__":

@@ -40,13 +40,29 @@ class CLIRenderer:
         t_info = f"TURN: {turn_str}".ljust(26)
         b_info = f"BAG: {bag_str}".ljust(26)
 
+        dict_label = getattr(game, "lexicon_name", "NASPA")
+        dict_desc = "NASPA (North American - NWL23)" if "NASPA" in dict_label else "CSW24 (Collins Int'l - WESPA)"
+        dict_info = f"LEXICON: {dict_desc}".ljust(53)
+
         lines = [
             "  ┌" + "─" * 59 + "┐",
             f"  │  {self.color('1;32', p1)} {self.color('1;35', p2)} │",
             f"  │  {self.color('1;33', t_info)} {self.color('90', b_info)} │",
+            f"  │  {self.color('36', dict_info)}   │",
             "  └" + "─" * 59 + "┘"
         ]
         return "\n".join(lines)
+
+    def render_lexicon_menu(self) -> str:
+        menu = """
+  SELECT SCRABBLE TOURNAMENT DICTIONARY:
+  ─────────────────────────────────────────────────────────────
+  [1] NASPA (North American - NWL23, 196,601 words)
+      Official tournament lexicon in the United States and Canada.
+  [2] CSW24 (Collins Scrabble Words 2024 - WESPA, 279,139 words)
+      Official international tournament lexicon used worldwide.
+  ─────────────────────────────────────────────────────────────"""
+        return self.color("1;36", menu)
 
     def render_rack(self, game: Any) -> str:
         rack_str = game.human_player.rack.display(color=self.use_color)

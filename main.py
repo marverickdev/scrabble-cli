@@ -14,6 +14,12 @@ from frontend.input_handler import InputHandler
 def run_cli_game():
     parser = argparse.ArgumentParser(description="Scrabble CLI - Play against AI in your terminal")
     parser.add_argument("--no-color", action="store_true", help="Disable ANSI terminal colors")
+    parser.add_argument(
+        "--lexicon", "--dict",
+        type=str,
+        default=None,
+        help="Tournament lexicon: 'NASPA' (North American) or 'CSW24' (Collins International). Prompted if omitted."
+    )
     parser.add_argument("--name", type=str, default="Player", help="Your player name")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for repeatable game")
     args = parser.parse_args()
@@ -22,12 +28,35 @@ def run_cli_game():
 
     print(renderer.render_banner())
     print("\n  Loading dictionary, please wait...")
+    # 1. Select Lexicon (interactive prompt or CLI flag)
+    selected_lexicon = args.lexicon
+    if not selected_lexicon:
+        print(renderer.render_banner())
+        print(renderer.render_lexicon_menu())
+        try:
+            choice = input("  Select dictionary [1/2] (default: 1): ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\n  Exiting...\n")
+            return
+        if choice in ("2", "csw", "CSW", "csw24", "CSW24"):
+            selected_lexicon = "CSW24"
+        else:
+            selected_lexicon = "NASPA"
+    else:
+        selected_lexicon = "CSW24" if "CSW" in selected_lexicon.upper() else "NASPA"
+        print(renderer.render_banner())
+
+    desc = "NASPA (North American - NWL23)" if selected_lexicon == "NASPA" else "CSW24 (Collins Int'l - WESPA)"
+    print(f"\n  Loading {desc} dictionary, please wait...")
     t0 = time.time()
     dag = get_default_gaddag()
     print(f"  Dictionary loaded in {time.time() - t0:.2f}s.\n")
+    dag = get_default_gaddag(selected_lexicon)
+    print(f"  {selected_lexicon} dictionary loaded in {time.time() - t0:.2f}s.\n")
 
     game = ScrabbleGame(
         gaddag=dag,
+        lexicon_name=selected_lexicon,
         human_name=args.name,
         ai_name="Computer",
         seed=args.seed

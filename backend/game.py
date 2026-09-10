@@ -39,6 +39,7 @@ class ScrabbleGame:
     def __init__(
         self,
         gaddag: Optional[GADDAG] = None,
+        lexicon_name: str = "NASPA",
         human_name: str = "Player",
         ai_name: str = "Computer",
         seed: Optional[int] = None
@@ -46,6 +47,8 @@ class ScrabbleGame:
         self.board = Board()
         self.bag = TileBag(seed=seed)
         self.gaddag = gaddag if gaddag is not None else get_default_gaddag()
+        self.lexicon_name = lexicon_name.upper()
+        self.gaddag = gaddag if gaddag is not None else get_default_gaddag(self.lexicon_name)
 
         self.human_player = Player(name=human_name, is_ai=False)
         self.ai_player = Player(name=ai_name, is_ai=True)
