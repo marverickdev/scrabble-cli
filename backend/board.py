@@ -416,7 +416,7 @@ class Board:
         """
         Renders an ANSI colorized 15x15 board with coordinate headers (A-O, 1-15).
         """
-        col_headers = "    " + "  ".join(f" {chr(ord('A') + c)} " for c in range(15))
+        col_headers = "     " + "   ".join(chr(ord('A') + c) for c in range(15))
         separator = "   +" + "---+" * 15
         lines = [col_headers, separator]
 

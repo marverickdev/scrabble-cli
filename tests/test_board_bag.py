@@ -233,6 +233,15 @@ class TestBoardValidationAndScoring(unittest.TestCase):
         self.assertIn("T", rendered)
         self.assertIn("15", rendered)
 
+        lines = rendered.splitlines()
+        col_header = lines[0]
+        # Verify each column letter A-O is centered above its 4-char wide column
+        for c in range(15):
+            letter = chr(ord('A') + c)
+            letter_idx = col_header.index(letter)
+            expected_center = 5 + c * 4
+            self.assertEqual(letter_idx, expected_center, f"Letter {letter} misaligned")
+
 
 if __name__ == "__main__":
     unittest.main()
