@@ -1,13 +1,20 @@
 """
-tests/test_game_loop.py - Unit tests for game controller, turn loop, and frontend input parsing.
+tests/test_game_loop.py - Unit tests for game controller, turn loop, and GUI move reconstruction.
 """
+
+import os
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
 import unittest
 from backend.game import ScrabbleGame
 from backend.lexicon import get_default_gaddag
 from backend.bag import TILE_SCORES
-from frontend.input_handler import InputHandler
-from frontend.cli_renderer import CLIRenderer
+from backend.board import Board
+
+from PyQt6.QtWidgets import QApplication
+# Ensure single QApplication instance for headless unit tests
+_qapp = QApplication.instance() or QApplication([])
+from frontend.board_widget import BoardWidget
 
 
 class TestGameController(unittest.TestCase):
@@ -98,7 +105,6 @@ class TestGameController(unittest.TestCase):
         # Simulate 6 passes
         for _ in range(3):
             self.game.pass_human_turn()
-            # Force AI to pass by giving it an empty rack and bag
             self.game.consecutive_passes += 1
             self.game.current_turn = "HUMAN"
 
@@ -108,51 +114,8 @@ class TestGameController(unittest.TestCase):
         self.assertIn("6 consecutive", self.game.game_over_reason)
 
 
-class TestFrontendInputAndRenderer(unittest.TestCase):
-    def test_input_handler_parsing(self):
-        p1 = InputHandler.parse_command("play CAT H8 H")
-        self.assertEqual(p1["action"], "play")
-        self.assertEqual(p1["word"], "CAT")
-        self.assertEqual(p1["coord"], "H8")
-        self.assertEqual(p1["direction"], "H")
-        self.assertEqual(p1["blanks"], [])
-
-        # Lowercase indicates blank tile
-        p2 = InputHandler.parse_command("play cAT H8 V")
-        self.assertEqual(p2["action"], "play")
-        self.assertEqual(p2["word"], "CAT")
-        self.assertEqual(p2["blanks"], [0])
-
-        p3 = InputHandler.parse_command("exchange QZ")
-        self.assertEqual(p3["action"], "exchange")
-        self.assertEqual(p3["tiles"], ["Q", "Z"])
-
-        p4 = InputHandler.parse_command("pass")
-        self.assertEqual(p4["action"], "pass")
-
-        p5 = InputHandler.parse_command("quit")
-        self.assertEqual(p5["action"], "quit")
-
-    def test_renderer_output(self):
-        game = ScrabbleGame(seed=42)
-        game.start_game()
-        renderer = CLIRenderer(use_color=False)
-
-        screen = renderer.render_screen(game)
-        self.assertIn("YOUR RACK", screen)
-        self.assertIn("COMPUTER", screen)
-        self.assertIn("LEXICON: NASPA", screen)
-
-        help_txt = renderer.render_help()
-        self.assertIn("COMMANDS GUIDE", help_txt)
-
-        menu_txt = renderer.render_lexicon_menu()
-        self.assertIn("NASPA", menu_txt)
-        self.assertIn("CSW24", menu_txt)
-
+class TestLexiconSelection(unittest.TestCase):
     def test_lexicon_selection_naspa_vs_csw(self):
-        from backend.lexicon import get_default_gaddag
-
         # 1. NASPA Game: 'ZO' must be invalid
         naspa_game = ScrabbleGame(lexicon_name="NASPA", seed=42)
         naspa_game.start_game()
@@ -169,6 +132,72 @@ class TestFrontendInputAndRenderer(unittest.TestCase):
         self.assertTrue(success)
         self.assertIn("You played ZO", msg)
         self.assertIn("CSW24", csw_game.lexicon_name)
+
+
+class TestBoardWidgetMoveReconstruction(unittest.TestCase):
+    def setUp(self):
+        self.board = Board()
+        self.board_widget = BoardWidget()
+
+    def test_no_tiles_placed(self):
+        move, err = self.board_widget.get_pending_move(self.board)
+        self.assertIsNone(move)
+        self.assertIsNotNone(err)
+        assert err is not None
+        self.assertIn("Place tiles on the board", err)
+
+    def test_non_linear_tiles_rejected(self):
+        # Place tiles across different rows and columns
+        self.board_widget.record_tile_placed(7, 7, {"letter": "C", "represented_letter": "C", "rack_index": 0, "is_blank": False})
+        self.board_widget.record_tile_placed(8, 8, {"letter": "A", "represented_letter": "A", "rack_index": 1, "is_blank": False})
+
+        move, err = self.board_widget.get_pending_move(self.board)
+        self.assertIsNone(move)
+        self.assertIsNotNone(err)
+        assert err is not None
+        self.assertIn("single straight row or column", err)
+
+    def test_horizontal_placement_reconstruction(self):
+        # Place 'CAT' at (7, 7), (7, 8), (7, 9)
+        self.board_widget.record_tile_placed(7, 7, {"letter": "C", "represented_letter": "C", "rack_index": 0, "is_blank": False})
+        self.board_widget.record_tile_placed(7, 8, {"letter": "A", "represented_letter": "A", "rack_index": 1, "is_blank": False})
+        self.board_widget.record_tile_placed(7, 9, {"letter": "T", "represented_letter": "T", "rack_index": 2, "is_blank": False})
+
+        move, err = self.board_widget.get_pending_move(self.board)
+        self.assertIsNone(err)
+        self.assertIsNotNone(move)
+        assert move is not None
+        word, coord_str, direction, blank_indices = move
+        self.assertEqual(word, "CAT")
+        self.assertEqual(coord_str, "H8")
+        self.assertEqual(direction, "H")
+        self.assertEqual(blank_indices, [])
+
+    def test_blank_tile_reconstruction(self):
+        # Place 'D' as blank at (7, 7) and 'O' at (7, 8) -> 'DO'
+        self.board_widget.record_tile_placed(7, 7, {"letter": "?", "represented_letter": "D", "rack_index": 0, "is_blank": True})
+        self.board_widget.record_tile_placed(7, 8, {"letter": "O", "represented_letter": "O", "rack_index": 1, "is_blank": False})
+
+        move, err = self.board_widget.get_pending_move(self.board)
+        self.assertIsNone(err)
+        self.assertIsNotNone(move)
+        assert move is not None
+        word, coord_str, direction, blank_indices = move
+        self.assertEqual(word, "DO")
+        self.assertEqual(coord_str, "H8")
+        self.assertEqual(direction, "H")
+        self.assertEqual(blank_indices, [0])
+
+    def test_gap_in_placement_rejected(self):
+        # Place at (7, 7) and (7, 9) with empty gap at (7, 8)
+        self.board_widget.record_tile_placed(7, 7, {"letter": "C", "represented_letter": "C", "rack_index": 0, "is_blank": False})
+        self.board_widget.record_tile_placed(7, 9, {"letter": "T", "represented_letter": "T", "rack_index": 1, "is_blank": False})
+
+        move, err = self.board_widget.get_pending_move(self.board)
+        self.assertIsNone(move)
+        self.assertIsNotNone(err)
+        assert err is not None
+        self.assertIn("contiguous word without empty gaps", err)
 
 
 if __name__ == "__main__":
